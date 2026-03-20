@@ -1,0 +1,17 @@
+{
+  "name": "rreact-practive",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/server"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev -- --turbopack",
+    "dev:server": "npm --workspace apps/server run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "build:server": "npm --workspace apps/server run build",
+    "build": "npm run build:web && npm run build:server",
+    "start:web": "npm --workspace apps/web run start",
+    "start:server": "npm --workspace apps/server run start"
+  }
+}
