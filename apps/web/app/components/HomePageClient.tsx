@@ -59,14 +59,14 @@ export default function HomePageClient() {
         <section className={styles.controlPanel}>
           <header className={styles.topBar}>
             <div className={styles.roomInfo}>
-              <div>
-                <span className={styles.infoLabel}>房號</span>
+              <div className={styles.roomInfoRow}>
+                <span className={styles.infoLabel}>房號：</span>
                 <strong>{state.roomState?.roomCode ?? state.roomCodeInput ?? "------"}</strong>
               </div>
-              <div>
-                <span className={styles.infoLabel}>密碼</span>
+              <div className={styles.roomInfoRow}>
+                <span className={styles.infoLabel}>密碼：</span>
                 <strong>
-                  {state.roomPassword || (state.roomState?.hasPassword ? "已設密碼" : "未設定")}
+                  {state.roomPassword || (state.roomState?.hasPassword ? "已設定" : "未設定")}
                 </strong>
               </div>
             </div>
@@ -78,7 +78,7 @@ export default function HomePageClient() {
                 onClick={copyInviteLink}
                 aria-label="複製邀請連結"
               >
-                +
+                <span className={styles.copyIcon} />
               </button>
               <div className={styles.palette}>
                 {COLORS.map((option) => {
