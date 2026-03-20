@@ -53,7 +53,8 @@ export type RoomGameAction =
         nextColor: string | null;
       };
     }
-  | { type: "reset_local_board" };
+  | { type: "reset_local_board" }
+  | { type: "leave_room" };
 
 export const COLORS = ["#de7a00", "#45df00", "#2f6fe4", "#ffb8aa"];
 export const DEFAULT_STAGE_COUNT = 10;
@@ -75,7 +76,7 @@ export const initialRoomGameState: RoomGameState = {
   errorText: "",
   toastMessage: "",
   inviteLink: "",
-  lastActionText: "等待操作"
+  lastActionText: "等待下一個操作"
 };
 
 export function roomGameReducer(
@@ -150,6 +151,19 @@ export function roomGameReducer(
             cells: stage.cells.map(() => null)
           }))
         }
+      };
+    case "leave_room":
+      return {
+        ...state,
+        color: null,
+        roomCodeInput: "",
+        roomPassword: "",
+        roomState: null,
+        statusText: "尚未連線",
+        errorText: "",
+        toastMessage: "",
+        inviteLink: "",
+        lastActionText: "等待下一個操作"
       };
     default:
       return state;

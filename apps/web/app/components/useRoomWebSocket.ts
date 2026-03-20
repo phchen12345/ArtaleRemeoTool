@@ -17,12 +17,14 @@ type ServerMessage =
 
 type PendingAction = "create" | "join" | "reset" | null;
 
-const DUPLICATE_SELECTION_MESSAGE = "每一層只能標記一個格子。";
-const DUPLICATE_COLOR_MESSAGE = "這個顏色已經被選走了。";
-const PICK_COLOR_FIRST_MESSAGE = "請先選擇顏色。";
-const ROOM_NOT_FOUND_MESSAGE = "找不到房間。";
-const INVALID_PASSWORD_MESSAGE = "房間密碼錯誤。";
+const DUPLICATE_SELECTION_MESSAGE = "A player can only select one cell per stage.";
+const DUPLICATE_COLOR_MESSAGE = "That color is already taken.";
+const PICK_COLOR_FIRST_MESSAGE = "Pick a color first.";
+const ROOM_NOT_FOUND_MESSAGE = "Room not found.";
+const INVALID_PASSWORD_MESSAGE = "Invalid room password.";
 const CELL_OCCUPIED_MESSAGE = "Cell is already occupied.";
+const ROOM_FULL_MESSAGE = "Room is full.";
+
 function getWebSocketUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_WS_URL;
 
@@ -95,7 +97,7 @@ export function useRoomWebSocket({
             roomState: data.payload,
             errorText: "",
             statusText: `已進入房間 ${data.payload.roomCode}`,
-            lastActionText: `最後更新時間 ${new Date(data.payload.updatedAt).toLocaleTimeString()}`
+            lastActionText: `最後更新 ${new Date(data.payload.updatedAt).toLocaleTimeString()}`
           }
         });
 
@@ -115,23 +117,27 @@ export function useRoomWebSocket({
         if (
           data.payload.message === DUPLICATE_SELECTION_MESSAGE ||
           data.payload.message === DUPLICATE_COLOR_MESSAGE ||
-          data.payload.message === PICK_COLOR_FIRST_MESSAGE
+          data.payload.message === PICK_COLOR_FIRST_MESSAGE ||
+          data.payload.message === ROOM_FULL_MESSAGE
         ) {
           showToast(data.payload.message);
           dispatch({ type: "set_error_text", payload: "" });
         } else if (data.payload.message === ROOM_NOT_FOUND_MESSAGE) {
           dispatch({ type: "set_error_text", payload: data.payload.message });
-          showToast("找不到房間。");
+          showToast("找不到房間");
         } else if (data.payload.message === INVALID_PASSWORD_MESSAGE) {
           dispatch({ type: "set_error_text", payload: data.payload.message });
-          showToast("房間密碼錯誤。");
+          showToast("房間密碼錯誤");
         } else {
           dispatch({ type: "set_error_text", payload: data.payload.message });
           showToast(data.payload.message);
         }
 
         pendingActionRef.current = null;
-        dispatch({ type: "patch", payload: { lastActionText: `錯誤：${data.payload.message}` } });
+        dispatch({
+          type: "patch",
+          payload: { lastActionText: `操作失敗：${data.payload.message}` }
+        });
         return;
       }
 
@@ -142,16 +148,16 @@ export function useRoomWebSocket({
       dispatch({
         type: "patch",
         payload: {
-          errorText: "WebSocket 連線失敗。",
+          errorText: "WebSocket 連線失敗",
           lastActionText: "連線發生錯誤"
         }
       });
-      showToast("WebSocket 連線失敗。");
+      showToast("WebSocket 連線失敗");
       pendingActionRef.current = null;
     });
 
     socket.addEventListener("close", () => {
-      dispatch({ type: "patch", payload: { statusText: "已斷線" } });
+      dispatch({ type: "patch", payload: { statusText: "已中斷連線" } });
     });
   }
 
@@ -161,7 +167,7 @@ export function useRoomWebSocket({
     connect({
       type: "create_room",
       payload: {
-        playerName: state.playerName || "匿名玩家",
+        playerName: state.playerName || "玩家",
         color: state.color,
         password: state.roomPassword || null,
         stageCount: DEFAULT_STAGE_COUNT,
@@ -177,7 +183,7 @@ export function useRoomWebSocket({
       type: "join_room",
       payload: {
         roomCode: state.roomCodeInput,
-        playerName: state.playerName || "匿名玩家",
+        playerName: state.playerName || "玩家",
         password: state.roomPassword || null
       }
     });
@@ -188,7 +194,7 @@ export function useRoomWebSocket({
 
     if (!currentRoom) {
       dispatch({ type: "set_color", payload: nextColor });
-      showToast("已選擇顏色。");
+      showToast("已選擇顏色");
       return;
     }
 
@@ -201,7 +207,7 @@ export function useRoomWebSocket({
     }
 
     dispatch({ type: "set_color", payload: nextColor });
-    showToast("已更新顏色。");
+    showToast("已更新顏色");
 
     if (!isSocketReady()) {
       return;
@@ -225,7 +231,7 @@ export function useRoomWebSocket({
     const nextColor = current === state.color ? null : state.color;
 
     if (!currentRoom) {
-      dispatch({ type: "set_error_text", payload: "請先加入房間再編輯棋盤。" });
+      dispatch({ type: "set_error_text", payload: "請先加入房間再操作棋盤。" });
       return;
     }
 
@@ -237,7 +243,7 @@ export function useRoomWebSocket({
     if (!isSocketReady()) {
       dispatch({
         type: "set_error_text",
-        payload: "即時連線尚未就緒，請重新加入房間後再試一次。"
+        payload: "目前未連線到房間，請重新加入後再試一次。"
       });
       return;
     }
@@ -267,7 +273,7 @@ export function useRoomWebSocket({
           type: "patch",
           payload: {
             errorText: "",
-            lastActionText: `第 ${DEFAULT_STAGE_COUNT - stageIndex} 層已使用第 ${occupiedIndex + 1} 格`
+            lastActionText: `第 ${DEFAULT_STAGE_COUNT - stageIndex} 層已選過第 ${occupiedIndex + 1} 格`
           }
         });
         return;
@@ -279,8 +285,8 @@ export function useRoomWebSocket({
       payload: {
         errorText: "",
         lastActionText: nextColor
-          ? `已標記第 ${DEFAULT_STAGE_COUNT - stageIndex} 層，第 ${cellIndex + 1} 格`
-          : `已清除第 ${DEFAULT_STAGE_COUNT - stageIndex} 層，第 ${cellIndex + 1} 格`
+          ? `已標記第 ${DEFAULT_STAGE_COUNT - stageIndex} 層第 ${cellIndex + 1} 格`
+          : `已清除第 ${DEFAULT_STAGE_COUNT - stageIndex} 層第 ${cellIndex + 1} 格`
       }
     });
 
@@ -306,13 +312,13 @@ export function useRoomWebSocket({
   function resetBoard() {
     const currentRoom = roomStateRef.current;
     if (!currentRoom || !isSocketReady()) {
-      showToast("請先加入房間再重置。");
+      showToast("請先加入房間再重置棋盤。");
       return;
     }
 
     pendingActionRef.current = "reset";
-    showToast("正在重置房間...");
-    dispatch({ type: "patch", payload: { lastActionText: "正在重置棋盤" } });
+    showToast("正在重置棋盤...");
+    dispatch({ type: "patch", payload: { lastActionText: "正在送出重置請求" } });
     dispatch({ type: "reset_local_board" });
 
     socketRef.current?.send(
@@ -326,11 +332,25 @@ export function useRoomWebSocket({
     );
   }
 
+  function leaveRoom() {
+    socketRef.current?.close();
+    socketRef.current = null;
+    pendingActionRef.current = null;
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("room");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+    dispatch({ type: "leave_room" });
+    showToast("已離開房間");
+  }
+
   return {
     createRoom,
     joinRoom,
     updatePlayerColor,
     cycleCell,
-    resetBoard
+    resetBoard,
+    leaveRoom
   };
 }

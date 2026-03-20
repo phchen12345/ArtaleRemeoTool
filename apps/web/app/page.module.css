@@ -144,6 +144,12 @@
   gap: 6px;
 }
 
+.roomActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
 .inlineForm input {
   min-width: 0;
   height: 32px;
@@ -191,6 +197,15 @@
 }
 
 .dangerButton {
+  background: #c25257;
+}
+
+.dangerWideButton {
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
   background: #c25257;
 }
 

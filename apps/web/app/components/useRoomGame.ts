@@ -90,22 +90,23 @@ export function useRoomGame() {
     }, 1800);
   }
 
-  const { createRoom, joinRoom, updatePlayerColor, cycleCell, resetBoard } = useRoomWebSocket({
-    state,
-    dispatch: dispatch as React.Dispatch<RoomGameAction>,
-    showToast,
-    passwordRef,
-    roomStateRef
-  });
+  const { createRoom, joinRoom, updatePlayerColor, cycleCell, resetBoard, leaveRoom } =
+    useRoomWebSocket({
+      state,
+      dispatch: dispatch as React.Dispatch<RoomGameAction>,
+      showToast,
+      passwordRef,
+      roomStateRef
+    });
 
   function copyInviteLink() {
     if (!state.inviteLink) {
-      showToast("目前還沒有可分享的邀請連結。");
+      showToast("目前沒有可複製的邀請連結");
       return;
     }
 
     navigator.clipboard.writeText(state.inviteLink);
-    showToast("已複製邀請連結。");
+    showToast("已複製邀請連結");
   }
 
   return {
@@ -126,6 +127,7 @@ export function useRoomGame() {
     updatePlayerColor,
     cycleCell,
     resetBoard,
+    leaveRoom,
     copyInviteLink
   };
 }

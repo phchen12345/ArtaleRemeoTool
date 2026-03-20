@@ -17,7 +17,8 @@ export default function HomePageClient() {
     updatePlayerColor,
     cycleCell,
     resetBoard,
-    copyInviteLink,
+    leaveRoom,
+    copyInviteLink
   } = useRoomGame();
 
   function onCreateRoom(event: FormEvent<HTMLFormElement>) {
@@ -28,6 +29,14 @@ export default function HomePageClient() {
   function onJoinRoom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     joinRoom();
+  }
+
+  function onLeaveRoom() {
+    if (!window.confirm("確定要離開房間嗎？")) {
+      return;
+    }
+
+    leaveRoom();
   }
 
   return (
@@ -52,15 +61,12 @@ export default function HomePageClient() {
             <div className={styles.roomInfo}>
               <div>
                 <span className={styles.infoLabel}>房號</span>
-                <strong>
-                  {state.roomState?.roomCode ?? state.roomCodeInput ?? "------"}
-                </strong>
+                <strong>{state.roomState?.roomCode ?? state.roomCodeInput ?? "------"}</strong>
               </div>
               <div>
                 <span className={styles.infoLabel}>密碼</span>
                 <strong>
-                  {state.roomPassword ||
-                    (state.roomState?.hasPassword ? "已加密" : "公開")}
+                  {state.roomPassword || (state.roomState?.hasPassword ? "已設密碼" : "未設定")}
                 </strong>
               </div>
             </div>
@@ -83,16 +89,12 @@ export default function HomePageClient() {
                     <button
                       key={option}
                       type="button"
-                      className={
-                        selected ? styles.paletteActive : styles.paletteButton
-                      }
+                      className={selected ? styles.paletteActive : styles.paletteButton}
                       style={{ backgroundColor: option }}
                       onClick={() => updatePlayerColor(option)}
-                      aria-label={`使用顏色 ${option}`}
+                      aria-label={`選擇顏色 ${option}`}
                     >
-                      {occupied ? (
-                        <span className={styles.paletteLock}>x</span>
-                      ) : null}
+                      {occupied ? <span className={styles.paletteLock}>x</span> : null}
                     </button>
                   );
                 })}
@@ -101,54 +103,63 @@ export default function HomePageClient() {
           </header>
 
           <div className={styles.quickBar}>
-            <div className={styles.formSection}>
-              <p className={styles.formTitle}>建立房間</p>
-              <form className={styles.inlineForm} onSubmit={onCreateRoom}>
-                <input
-                  value={state.playerName}
-                  onChange={(event) => setPlayerName(event.target.value)}
-                  placeholder="玩家名稱"
-                />
-                <input
-                  value={state.roomPassword}
-                  onChange={(event) => setRoomPassword(event.target.value)}
-                  placeholder="房間密碼"
-                  type="password"
-                />
-                <button type="submit" className={styles.dangerButton}>
-                  建立
-                </button>
-              </form>
-            </div>
-
-            <div className={styles.formSection}>
-              <p className={styles.formTitle}>加入房間</p>
-              <form className={styles.joinForm} onSubmit={onJoinRoom}>
-                <input
-                  value={state.roomCodeInput}
-                  onChange={(event) => setRoomCodeInput(event.target.value)}
-                  placeholder="房號"
-                />
-                <input
-                  value={state.roomPassword}
-                  onChange={(event) => setRoomPassword(event.target.value)}
-                  placeholder="房間密碼"
-                  type="password"
-                />
-                <div className={styles.joinActions}>
-                  <button type="submit" className={styles.primaryButton}>
-                    加入
+            {state.roomState ? (
+              <div className={styles.formSection}>
+                <p className={styles.formTitle}>房間操作</p>
+                <div className={styles.roomActions}>
+                  <button type="button" className={styles.secondaryButton} onClick={resetBoard}>
+                    重置棋盤
                   </button>
-                  <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={resetBoard}
-                  >
-                    重置
+                  <button type="button" className={styles.dangerWideButton} onClick={onLeaveRoom}>
+                    離開房間
                   </button>
                 </div>
-              </form>
-            </div>
+              </div>
+            ) : (
+              <>
+                <div className={styles.formSection}>
+                  <p className={styles.formTitle}>建立房間</p>
+                  <form className={styles.inlineForm} onSubmit={onCreateRoom}>
+                    <input
+                      value={state.playerName}
+                      onChange={(event) => setPlayerName(event.target.value)}
+                      placeholder="玩家名稱"
+                    />
+                    <input
+                      value={state.roomPassword}
+                      onChange={(event) => setRoomPassword(event.target.value)}
+                      placeholder="房間密碼"
+                      type="password"
+                    />
+                    <button type="submit" className={styles.dangerButton}>
+                      建立
+                    </button>
+                  </form>
+                </div>
+
+                <div className={styles.formSection}>
+                  <p className={styles.formTitle}>加入房間</p>
+                  <form className={styles.joinForm} onSubmit={onJoinRoom}>
+                    <input
+                      value={state.roomCodeInput}
+                      onChange={(event) => setRoomCodeInput(event.target.value)}
+                      placeholder="房號"
+                    />
+                    <input
+                      value={state.roomPassword}
+                      onChange={(event) => setRoomPassword(event.target.value)}
+                      placeholder="房間密碼"
+                      type="password"
+                    />
+                    <div className={styles.joinActions}>
+                      <button type="submit" className={styles.primaryButton}>
+                        加入
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -178,9 +189,7 @@ export default function HomePageClient() {
             <div className={styles.meta}>
               <span>{state.statusText}</span>
               <span>{state.lastActionText}</span>
-              {state.errorText ? (
-                <span className={styles.error}>{state.errorText}</span>
-              ) : null}
+              {state.errorText ? <span className={styles.error}>{state.errorText}</span> : null}
             </div>
             <div className={styles.party}>
               {state.roomState?.players.map((player) => (
