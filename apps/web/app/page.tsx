@@ -1,4 +1,4 @@
-import HomePageClient from "./components/HomePageClient";
+import HomePageClient from "./components/room/HomePageClient";
 
 export default function Page() {
   return <HomePageClient />;
