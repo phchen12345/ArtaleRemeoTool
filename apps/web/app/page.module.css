@@ -6,7 +6,7 @@
 }
 
 .frame {
-  width: min(304px, 100%);
+  width: min(400px, 100%);
   display: grid;
   gap: 10px;
 }
@@ -21,17 +21,20 @@
 }
 
 .topBar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
   align-items: stretch;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 8px;
+  width: 100%;
 }
 
 .roomInfo {
+  width: 100%;
   min-width: 0;
   display: grid;
   gap: 2px;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border-radius: 12px;
   background: linear-gradient(180deg, #1f2027 0%, #17181d 100%);
   color: #f8f1d1;
@@ -40,14 +43,14 @@
 
 .roomInfo strong {
   color: #f0bf2b;
-  font-size: 1.12rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
 .infoLabel {
   display: inline;
   color: #ffffff;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -55,57 +58,53 @@
   display: flex;
   gap: 6px;
   align-items: baseline;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.roomInfoRow strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .actions {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  gap: 8px;
+  width: auto;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  height: 64px;
+  align-items: center;
+  gap: 6px;
 }
 
 .iconButton {
-  width: 42px;
-  min-width: 42px;
+  width: 54px;
+  min-width: 54px;
+  height: 64px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #11b9b6;
   color: white;
-  font-size: 1.15rem;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   cursor: pointer;
   display: grid;
   place-items: center;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-.copyIcon {
-  position: relative;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #ffffff;
-  border-radius: 3px;
-}
-
-.copyIcon::before {
-  content: "";
-  position: absolute;
-  left: -6px;
-  top: 4px;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #ffffff;
-  border-radius: 3px;
-  background: transparent;
-}
-
 .palette {
-  flex: 1;
-  display: flex;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 30px);
+  justify-content: start;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 12px;
+  gap: 4px;
+  height: 64px;
+  padding: 2px 4px;
+  border-radius: 10px;
   background: linear-gradient(180deg, #1f2027 0%, #17181d 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
@@ -114,11 +113,11 @@
 .paletteActive {
   position: relative;
   width: 30px;
-  height: 30px;
-  border-radius: 10px;
+  min-width: 30px;
+  height: 100%;
+  border-radius: 7px;
   border: 0;
   cursor: pointer;
-  flex: 0 0 auto;
 }
 
 .paletteActive {
@@ -128,17 +127,19 @@
 
 .paletteLock {
   position: absolute;
-  right: 2px;
-  bottom: 1px;
+  right: 4px;
+  bottom: 3px;
   display: grid;
   place-items: center;
-  width: 12px;
-  height: 12px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
   border-radius: 999px;
   background: rgba(15, 15, 18, 0.78);
   color: #ffffff;
-  font-size: 0.6rem;
+  font-size: 0.44rem;
   font-weight: 800;
+  line-height: 1;
 }
 
 .quickBar {
@@ -351,7 +352,11 @@
   padding: 14px 16px 16px;
   border-radius: 28px;
   background:
-    radial-gradient(circle at top left, rgba(173, 110, 255, 0.18), transparent 42%),
+    radial-gradient(
+      circle at top left,
+      rgba(173, 110, 255, 0.18),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(20, 20, 24, 0.98), rgba(11, 11, 14, 0.98));
   border: 1px solid rgba(162, 103, 255, 0.22);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
@@ -419,11 +424,17 @@
   }
 
   .topBar {
-    display: grid;
     grid-template-columns: 1fr;
   }
 
   .actions {
+    grid-template-columns: 1fr;
     width: 100%;
+  }
+
+  .iconButton {
+    width: 100%;
+    min-width: 0;
+    height: 64px;
   }
 }

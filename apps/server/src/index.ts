@@ -87,14 +87,20 @@ const ROOM_KEY_PREFIX = "room:";
 const CLEANUP_INTERVAL_MS = 60_000;
 const ROOM_STALE_MS = 15 * 60 * 1000;
 const MAX_ROOM_PLAYERS = 4;
-const DUPLICATE_SELECTION_MESSAGE = "隢?????摮?";
-const DUPLICATE_COLOR_MESSAGE = "甇日??脣歇鋡怠隞摰園??";
-const PICK_COLOR_FIRST_MESSAGE = "隢??豢?憿";
-const CELL_OCCUPIED_MESSAGE = "Cell is already occupied.";
-const ROOM_FULL_MESSAGE = "Room is full.";
+const DUPLICATE_SELECTION_MESSAGE = "每位玩家在同一層只能選一格。";
+const DUPLICATE_COLOR_MESSAGE = "這個顏色已經有人選了。";
+const PICK_COLOR_FIRST_MESSAGE = "請先選擇顏色。";
+const CELL_OCCUPIED_MESSAGE = "這一格已經被其他玩家選走了。";
+const ROOM_FULL_MESSAGE = "房間已滿。";
+const ROOM_NOT_FOUND_MESSAGE = "找不到房間。";
+const INVALID_PASSWORD_MESSAGE = "房間密碼錯誤。";
+const ROOM_SESSION_MISMATCH_MESSAGE = "房間連線狀態不一致。";
+const STAGE_NOT_FOUND_MESSAGE = "找不到指定層數。";
+const CELL_NOT_FOUND_MESSAGE = "找不到指定格子。";
+const PLAYER_SESSION_NOT_FOUND_MESSAGE = "找不到玩家連線資訊。";
 
 if (!REDIS_URL) {
-  throw new Error("REDIS_URL is required.");
+  throw new Error("缺少必要環境變數 REDIS_URL。");
 }
 
 const app = express();
@@ -109,7 +115,7 @@ const roomSockets = new Map<string, Map<string, WebSocket>>();
 
 const redis = createClient({ url: REDIS_URL });
 redis.on("error", (error) => {
-  console.error("Redis error", error);
+  console.error("Redis 錯誤", error);
 });
 
 app.get("/health", async (_request, response) => {
@@ -119,7 +125,7 @@ app.get("/health", async (_request, response) => {
   } catch (error) {
     response.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to query Redis."
+      error: error instanceof Error ? error.message : "讀取 Redis 失敗。"
     });
   }
 });
@@ -221,24 +227,24 @@ async function broadcastRoom(room: Room) {
 
 function assertPassword(room: Room, password: string | null) {
   if ((room.password ?? null) !== (password ?? null)) {
-    throw new Error("Invalid room password.");
+    throw new Error(INVALID_PASSWORD_MESSAGE);
   }
 }
 
 async function requireSession(socket: WebSocket) {
   const session = socketSession.get(socket);
   if (!session) {
-    throw new Error("Join a room before editing the board.");
+    throw new Error("請先加入房間再操作棋盤。");
   }
 
   const room = await loadRoom(session.roomCode);
   if (!room) {
-    throw new Error("Room not found.");
+    throw new Error(ROOM_NOT_FOUND_MESSAGE);
   }
 
   const player = room.players.find((candidate) => candidate.id === session.playerId);
   if (!player) {
-    throw new Error("Player session not found.");
+    throw new Error(PLAYER_SESSION_NOT_FOUND_MESSAGE);
   }
 
   return { room, player, session };
@@ -263,7 +269,7 @@ async function createUniqueRoomCode() {
     }
   }
 
-  throw new Error("Failed to generate a unique room code.");
+  throw new Error("產生房號失敗，請稍後再試。");
 }
 
 async function handleLeave(socket: WebSocket) {
@@ -320,7 +326,7 @@ async function cleanupStaleRooms() {
 }
 
 wss.on("connection", (socket) => {
-  send(socket, { type: "system", payload: { message: "Socket connected." } });
+  send(socket, { type: "system", payload: { message: "已連線到伺服器。" } });
 
   socket.on("message", async (raw) => {
     try {
@@ -359,7 +365,7 @@ wss.on("connection", (socket) => {
         const code = normalizeRoomCode(message.payload.roomCode);
         const room = await loadRoom(code);
         if (!room) {
-          throw new Error("Room not found.");
+          throw new Error(ROOM_NOT_FOUND_MESSAGE);
         }
 
         assertPassword(room, message.payload.password);
@@ -388,7 +394,7 @@ wss.on("connection", (socket) => {
       if (message.type === "update_color") {
         const { room, player } = await requireSession(socket);
         if (room.code !== normalizeRoomCode(message.payload.roomCode)) {
-          throw new Error("Room session mismatch.");
+          throw new Error(ROOM_SESSION_MISMATCH_MESSAGE);
         }
 
         assertColorAvailable(room, message.payload.color, player.id);
@@ -402,7 +408,7 @@ wss.on("connection", (socket) => {
       if (message.type === "update_cell") {
         const { room, player } = await requireSession(socket);
         if (room.code !== normalizeRoomCode(message.payload.roomCode)) {
-          throw new Error("Room session mismatch.");
+          throw new Error(ROOM_SESSION_MISMATCH_MESSAGE);
         }
 
         if (!player.color) {
@@ -411,11 +417,11 @@ wss.on("connection", (socket) => {
 
         const stage = room.stages[message.payload.stageIndex];
         if (!stage) {
-          throw new Error("Stage does not exist.");
+          throw new Error(STAGE_NOT_FOUND_MESSAGE);
         }
 
         if (message.payload.cellIndex < 0 || message.payload.cellIndex >= stage.cells.length) {
-          throw new Error("Cell does not exist.");
+          throw new Error(CELL_NOT_FOUND_MESSAGE);
         }
 
         const currentCell = stage.cells[message.payload.cellIndex];
@@ -445,7 +451,7 @@ wss.on("connection", (socket) => {
       if (message.type === "reset_room") {
         const { room } = await requireSession(socket);
         if (room.code !== normalizeRoomCode(message.payload.roomCode)) {
-          throw new Error("Room session mismatch.");
+          throw new Error(ROOM_SESSION_MISMATCH_MESSAGE);
         }
 
         room.stages = room.stages.map((stage) => ({
@@ -457,7 +463,7 @@ wss.on("connection", (socket) => {
         await broadcastRoom(room);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unexpected server error.";
+      const message = error instanceof Error ? error.message : "發生未預期的伺服器錯誤。";
       send(socket, { type: "error", payload: { message } });
     }
   });
@@ -475,11 +481,11 @@ async function main() {
   }, CLEANUP_INTERVAL_MS);
 
   server.listen(PORT, () => {
-    console.log(`RJPQ realtime server listening on http://localhost:${PORT}`);
+    console.log(`RJPQ 即時伺服器已啟動：http://localhost:${PORT}`);
   });
 }
 
 void main().catch((error) => {
-  console.error("Failed to start realtime server", error);
+  console.error("即時伺服器啟動失敗", error);
   process.exit(1);
 });

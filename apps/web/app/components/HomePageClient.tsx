@@ -4,6 +4,11 @@ import { FormEvent } from "react";
 import styles from "../page.module.css";
 import { COLORS, useRoomGame } from "./useRoomGame";
 
+function getDisplayPlayerName(name: string) {
+  const generatedName = /^user(\d+)$/i.exec(name);
+  return generatedName ? `玩家 ${generatedName[1]}` : name;
+}
+
 export default function HomePageClient() {
   const {
     state,
@@ -18,7 +23,7 @@ export default function HomePageClient() {
     cycleCell,
     resetBoard,
     leaveRoom,
-    copyInviteLink
+    copyInviteLink,
   } = useRoomGame();
 
   function onCreateRoom(event: FormEvent<HTMLFormElement>) {
@@ -61,12 +66,15 @@ export default function HomePageClient() {
             <div className={styles.roomInfo}>
               <div className={styles.roomInfoRow}>
                 <span className={styles.infoLabel}>房號：</span>
-                <strong>{state.roomState?.roomCode ?? state.roomCodeInput ?? "------"}</strong>
+                <strong>
+                  {state.roomState?.roomCode ?? state.roomCodeInput ?? "------"}
+                </strong>
               </div>
               <div className={styles.roomInfoRow}>
                 <span className={styles.infoLabel}>密碼：</span>
                 <strong>
-                  {state.roomPassword || (state.roomState?.hasPassword ? "已設定" : "未設定")}
+                  {state.roomPassword ||
+                    (state.roomState?.hasPassword ? "已設定" : "未設定")}
                 </strong>
               </div>
             </div>
@@ -78,10 +86,10 @@ export default function HomePageClient() {
                 onClick={copyInviteLink}
                 aria-label="複製邀請連結"
               >
-                <span className={styles.copyIcon} />
+                邀請
               </button>
-              <div className={styles.palette}>
-                {COLORS.map((option) => {
+              <div className={styles.palette} aria-label="選擇顏色">
+                {COLORS.map((option, index) => {
                   const occupied = occupiedColors.has(option);
                   const selected = option === state.color;
 
@@ -89,12 +97,16 @@ export default function HomePageClient() {
                     <button
                       key={option}
                       type="button"
-                      className={selected ? styles.paletteActive : styles.paletteButton}
+                      className={
+                        selected ? styles.paletteActive : styles.paletteButton
+                      }
                       style={{ backgroundColor: option }}
                       onClick={() => updatePlayerColor(option)}
-                      aria-label={`選擇顏色 ${option}`}
+                      aria-label={`選擇顏色 ${index + 1}`}
                     >
-                      {occupied ? <span className={styles.paletteLock}>x</span> : null}
+                      {occupied ? (
+                        <span className={styles.paletteLock}>已用</span>
+                      ) : null}
                     </button>
                   );
                 })}
@@ -107,10 +119,18 @@ export default function HomePageClient() {
               <div className={styles.formSection}>
                 <p className={styles.formTitle}>房間操作</p>
                 <div className={styles.roomActions}>
-                  <button type="button" className={styles.secondaryButton} onClick={resetBoard}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={resetBoard}
+                  >
                     重置棋盤
                   </button>
-                  <button type="button" className={styles.dangerWideButton} onClick={onLeaveRoom}>
+                  <button
+                    type="button"
+                    className={styles.dangerWideButton}
+                    onClick={onLeaveRoom}
+                  >
                     離開房間
                   </button>
                 </div>
@@ -189,7 +209,9 @@ export default function HomePageClient() {
             <div className={styles.meta}>
               <span>{state.statusText}</span>
               <span>{state.lastActionText}</span>
-              {state.errorText ? <span className={styles.error}>{state.errorText}</span> : null}
+              {state.errorText ? (
+                <span className={styles.error}>{state.errorText}</span>
+              ) : null}
             </div>
             <div className={styles.party}>
               {state.roomState?.players.map((player) => (
@@ -198,7 +220,7 @@ export default function HomePageClient() {
                     className={styles.playerDot}
                     style={{ backgroundColor: player.color ?? "#5c5f72" }}
                   />
-                  <span>{player.name}</span>
+                  <span>{getDisplayPlayerName(player.name)}</span>
                 </div>
               ))}
             </div>
