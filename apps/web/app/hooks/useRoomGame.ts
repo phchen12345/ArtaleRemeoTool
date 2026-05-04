@@ -57,12 +57,12 @@ export function useRoomGame() {
 
   function copyInviteLink() {
     if (!state.inviteLink) {
-      showToast("?桀?瘝??航?鋆賜??隢??");
+      showToast("目前沒有可複製的邀請連結");
       return;
     }
 
     navigator.clipboard.writeText(state.inviteLink);
-    showToast("撌脰?鋆賡?隢??");
+    showToast("已複製邀請連結");
   }
 
   return {
